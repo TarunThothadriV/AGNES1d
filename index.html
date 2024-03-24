@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGNES Clustering</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      #output {
+        margin: 20px auto 0 auto;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body style="margin: 0 10em 0 10em; background-color: #152238; color: white; font-family: Poppins, sans-serif; font-weight: 400; font-style: normal">
+    <h1>AGNES Clustering</h1>
+    <label for="linkage">Choose linkage method:</label>
+    <select id="linkage" style="padding: 0.5em 0em 0.5em 2em; color: black; font-weight: 900; border: none; border-radius: 10em">
+      <option value="single">Single Linkage</option>
+      <option value="complete">Complete Linkage</option>
+    </select>
+    <br />
+    <div style="margin-top: 1em">
+      <label for="data">Enter data points (comma separated):</label>
+      <input type="text" id="data" style="padding: 0.5em 0em 0.5em 2em; color: black; font-weight: 900; border: none; border-radius: 10em" />
+    </div>
+    <br />
+    <button
+      onclick="cluster()"
+      style="cursor: pointer; padding: 0.5em 3em 0.5em 3em; background-color: chartreuse; color: black; font-weight: 900; border: none; border-radius: 10em"
+    >
+      Cluster
+    </button>
+    <div id="output"></div>
+    <div id="output1"></div>
+
+    <script>
+      function cluster() {
+        var linkageMethod = document.getElementById("linkage").value;
+        var data = document.getElementById("data").value.split(",");
+        data = data.map(function (item) {
+          return parseFloat(item.trim());
+        });
+
+        var clusters = agnes(data, linkageMethod);
+        var output = document.getElementById("output");
+        var output1 = document.getElementById("output1");
+        output.innerHTML = "<h2>Steps:</h2>";
+
+        var step = 1;
+
+        var interval = setInterval(function () {
+          if (clusters.length === 1) {
+            clearInterval(interval);
+            // Add one more step to combine all data points into a single cluster
+            output1.innerHTML += "<p><strong>Step " + step++ + ":</strong>";
+            output1.innerHTML += "Cluster 1: [" + data.join(", ") + "]</p>";
+          } else {
+            output1.innerHTML += "<p><strong>Step " + step + ":</strong> ";
+            clusters.forEach(function (cluster, index) {
+              output1.innerHTML += "Cluster " + (index + 1) + ": [" + cluster.join(", ") + "]";
+              if (index < clusters.length - 1) {
+                output1.innerHTML += ", ";
+              }
+            });
+            output1.innerHTML += "</p>";
+
+            // Merge clusters
+            var minDistance = Number.MAX_VALUE;
+            var closestClusters = [];
+
+            for (var i = 0; i < clusters.length; i++) {
+              for (var j = i + 1; j < clusters.length; j++) {
+                var distance = calculateDistance(clusters[i], clusters[j], linkageMethod);
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestClusters = [i, j];
+                }
+              }
+            }
+
+            var mergedCluster = clusters[closestClusters[0]].concat(clusters[closestClusters[1]]);
+            clusters.splice(closestClusters[1], 1);
+            clusters.splice(closestClusters[0], 1, mergedCluster);
+
+            step++;
+          }
+        }, 1000);
+      }
+
+      function agnes(data, method) {
+        // AGNES algorithm implementation
+        var clusters = data.map(function (point) {
+          return [point];
+        });
+
+        return clusters;
+      }
+
+      function calculateDistance(cluster1, cluster2, method) {
+        // Distance calculation
+        if (method === "single") {
+          return Math.min.apply(
+            null,
+            cluster1.map(function (point1) {
+              return Math.min.apply(
+                null,
+                cluster2.map(function (point2) {
+                  return Math.abs(point1 - point2);
+                })
+              );
+            })
+          );
+        } else if (method === "complete") {
+          return Math.max.apply(
+            null,
+            cluster1.map(function (point1) {
+              return Math.max.apply(
+                null,
+                cluster2.map(function (point2) {
+                  return Math.abs(point1 - point2);
+                })
+              );
+            })
+          );
+        }
+      }
+    </script>
+  </body>
+</html>
